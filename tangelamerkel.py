@@ -134,7 +134,7 @@ for user in r.users:
         client.send_message('profesoroak_bot', 'Quién es %s' % user.id)
         tries = 0
         while True:
-            time.sleep(10 + tries * 2)
+            time.sleep(20 + tries * 2)
 
             sys.stdout.flush()
             oldtotal = total
