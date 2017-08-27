@@ -119,63 +119,60 @@ for user in r.users:
     # Search in cache. Use cached version if already registered and validated
     # and no special "refresh all" mode is used
     if args.refreshall == False and \
-    str(user.id) in cached_users.keys and \
+    str(user.id) in cached_users.keys() and \
     cached_users[str(user.id)]["registered"] == True and \
     cached_users[str(user.id)]["validated"] == True:
         if user.username != None:
             cached_users[str(user.id)]["username"] = user.username
-        users[str(user.id)] = cached_users[str(user.id)]
+        newuser = cached_users[str(user.id)]
         sys.stdout.write(" (Cached!)\n")
         sys.stdout.flush()
-        continue
-
-    # Else, ask Profesor Oak for relevant data
-    sys.stdout.write(" (Asking Profesor Oak...)")
-    sys.stdout.flush()
-    client.send_message('profesoroak_bot', 'Quién es %s' % user.id)
-    tries = 0
-    while True:
-        time.sleep(5 + tries * 2)
-
-        sys.stdout.flush()
-        oldtotal = total
-        total,messages,senders = client.get_message_history('profesoroak_bot',limit=1)
-        tries += 1
-        if total >= (oldtotal+2):
-            break
-    sys.stdout.write(" (done!)")
-    sys.stdout.flush()
-
-    # Parse Professor Oak output
-    newuser = {}
-    if user.username != None:
-        newuser["username"] = user.username
-    if messages[0].message.find(u"✅") >- 1:
-        newuser["registered"] = True
-        newuser["validated"] = True
-        validated_users[str(user.id)] = newuser
-    elif messages[0].message.find(u"⚠️") >- 1:
-        newuser["registered"] = True
-        newuser["validated"] = False
-        unvalidated_users[str(user.id)] = newuser
     else:
-        newuser["registered"] = False
-        unregistered_users[str(user.id)] = newuser
+        # Ask Profesor Oak for relevant data
+        sys.stdout.write(" (Asking Profesor Oak...)")
+        sys.stdout.flush()
+        client.send_message('profesoroak_bot', 'Quién es %s' % user.id)
+        tries = 0
+        while True:
+            time.sleep(10 + tries * 2)
+
+            sys.stdout.flush()
+            oldtotal = total
+            total,messages,senders = client.get_message_history('profesoroak_bot',limit=1)
+            tries += 1
+            if total >= (oldtotal+2):
+                break
+        sys.stdout.write(" (done!)\n")
+        sys.stdout.flush()
+
+        # Parse Professor Oak output
+        newuser = {}
+        if user.username != None:
+            newuser["username"] = user.username
+        if messages[0].message.find(u"✅") >- 1:
+            newuser["registered"] = True
+            newuser["validated"] = True
+        elif messages[0].message.find(u"⚠️") >- 1:
+            newuser["registered"] = True
+            newuser["validated"] = False
+        else:
+            newuser["registered"] = False
+
+        # TODO Parse more data to get spammers, fly, trolls...
+        #if newuser["registered"] = True:
+            #if messages[0].message.find(u"🔥") >- 1:
+            #    newuser["rager"] = True:
+            #if messages[0].message.find(u"") >- 1:
+            #    newuser["fly"] = True:
+            #if messages[0].message.find(u"") >- 1:
+            #    newuser["troll"] = True:
+            #if messages[0].message.find(u"") >- 1:
+            #    newuser["hacks"] = True:
+            #if messages[0].message.find(u"📨") >- 1:
+            #    newuser["spam"] = True:
+
     users[str(user.id)] = newuser
     cached_users[str(user.id)] = newuser
-
-    # TODO Parse more data to get spammers, fly, trolls...
-    #if newuser["registered"] = True:
-        #if messages[0].message.find(u"🔥") >- 1:
-        #    newuser["rager"] = True:
-        #if messages[0].message.find(u"") >- 1:
-        #    newuser["fly"] = True:
-        #if messages[0].message.find(u"") >- 1:
-        #    newuser["troll"] = True:
-        #if messages[0].message.find(u"") >- 1:
-        #    newuser["hacks"] = True:
-        #if messages[0].message.find(u"📨") >- 1:
-        #    newuser["spam"] = True:
 
     # Save cache on disk
     with open(datapath + '/users.json', 'w') as f:
@@ -185,20 +182,30 @@ for user in r.users:
 # Print information
 #
 
-print("Unregistered users (%i):")
-for u in unregistered_users:
-    sys.stdout.write("%s " % unregistered_users.keys(u))
+print("Unregistered users:")
+for u in users:
+    if users[u]["registered"] == False:
+        sys.stdout.write("%s " % u)
 sys.stdout.write("\n")
 sys.stdout.flush()
 
-print("Unvalidated users (%i):")
-for u in unvalidated_users:
-    sys.stdout.write("%s " % unvalidated_users.keys(u))
+print("Unvalidated users:")
+for u in users:
+    if users[u]["registered"] == True and users[u]["validated"] == False:
+        sys.stdout.write("%s " % u)
 sys.stdout.write("\n")
 sys.stdout.flush()
 
-print("Validated users (%i):")
-for u in validated_users:
-    sys.stdout.write("%s " % validated_users.keys(u))
+print("Validated users:")
+for u in users:
+    if users[u]["registered"] == True and users[u]["validated"] == True:
+        sys.stdout.write("%s " % u)
+sys.stdout.write("\n")
+sys.stdout.flush()
+
+print("Users without username:")
+for u in users:
+    if "username" not in users[u].keys():
+        sys.stdout.write("%s " % u)
 sys.stdout.write("\n")
 sys.stdout.flush()
