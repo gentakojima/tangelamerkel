@@ -19,7 +19,7 @@ from telethon.errors.rpc_errors_420 import FloodWaitError
 
 parser = argparse.ArgumentParser(description='Helps moderating Pokémon GO Telegram groups with an iron hammer')
 parser.add_argument('--force-setup', help='Force the initial setup, automatically called first time', dest='setup', action='store_true')
-parser.add_argument('--refresh-all', help='Refresh all users, even if known to be already validated', dest='refreshall', action='store_true')
+parser.add_argument('--refresh-oak', help='Refresh Oak info for all users (basic info always refreshed)', dest='refreshall', action='store_true')
 parser.add_argument('--group', help='Specify the group handle (use the @name)', nargs=1, dest='group')
 args = parser.parse_args()
 
@@ -113,6 +113,7 @@ for user in r.users:
     sys.stdout.write("%s - %s %s " % (user.id,user.first_name or "",user.last_name or ""))
     if user.username != None:
         sys.stdout.write("(@%s)" % user.username)
+
     sys.stdout.flush()
 
     # Search in cache. Use cached version if already registered and validated
@@ -121,6 +122,8 @@ for user in r.users:
     str(user.id) in cached_users.keys and \
     cached_users[str(user.id)]["registered"] == True and \
     cached_users[str(user.id)]["validated"] == True:
+        if user.username != None:
+            cached_users[str(user.id)]["username"] = user.username
         users[str(user.id)] = cached_users[str(user.id)]
         sys.stdout.write(" (Cached!)\n")
         sys.stdout.flush()
