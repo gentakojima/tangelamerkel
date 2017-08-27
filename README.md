@@ -57,5 +57,5 @@ requests, so use with caution.
 
 Probably a bunch. The code was barely tested yet. I had a problem with the API
 limit so I'm still waiting to keep the tests going. This could kill your
-Telegram account, explode your computer or convert your Pokémon Go account
-to Mystic, so use at your own risk!
+Telegram account, explode your computer or even turn your Pokémon Go account
+into Mystic, so use at your own risk!
