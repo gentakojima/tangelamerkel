@@ -157,19 +157,12 @@ for user in r.users:
             newuser["validated"] = False
         else:
             newuser["registered"] = False
-
-        # TODO Parse more data to get spammers, fly, trolls...
-        #if newuser["registered"] = True:
-            #if messages[0].message.find(u"🔥") >- 1:
-            #    newuser["rager"] = True:
-            #if messages[0].message.find(u"") >- 1:
-            #    newuser["fly"] = True:
-            #if messages[0].message.find(u"") >- 1:
-            #    newuser["troll"] = True:
-            #if messages[0].message.find(u"") >- 1:
-            #    newuser["hacks"] = True:
-            #if messages[0].message.find(u"📨") >- 1:
-            #    newuser["spam"] = True:
+        if messages[0].message.find(u"Amarillo") >- 1:
+            newuser["team"] = "instinct"
+        elif messages[0].message.find(u"Rojo") >- 1:
+            newuser["team"] = "valor"
+        elif messages[0].message.find(u"Azul") >- 1:
+            newuser["team"] = "mystic"
 
     users[str(user.id)] = newuser
     cached_users[str(user.id)] = newuser
@@ -206,6 +199,30 @@ sys.stdout.flush()
 print("Users without username:")
 for u in users:
     if "username" not in users[u].keys():
+        sys.stdout.write("%s " % u)
+sys.stdout.write("\n")
+sys.stdout.flush()
+
+print("Users from team Mystic:")
+for u in users:
+    if users[u]["registered"] == True and "team" in users[u].keys() and \
+        users[u]["team"] == "mystic":
+        sys.stdout.write("%s " % u)
+sys.stdout.write("\n")
+sys.stdout.flush()
+
+print("Users from team Valor:")
+for u in users:
+    if users[u]["registered"] == True and "team" in users[u].keys() and \
+        users[u]["team"] == "valor":
+        sys.stdout.write("%s " % u)
+sys.stdout.write("\n")
+sys.stdout.flush()
+
+print("Users from team Instinc:")
+for u in users:
+    if users[u]["registered"] == True and "team" in users[u].keys() and \
+        users[u]["team"] == "instinct":
         sys.stdout.write("%s " % u)
 sys.stdout.write("\n")
 sys.stdout.flush()
