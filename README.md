@@ -2,13 +2,13 @@
 
 A simple Python script that helps moderating Pokémon Go groups in Telegram.
 
-Using the Telethon library for communicating with Telergam, Tangela Merkel
+Using the Telethon library for communicating with Telegram, Tangela Merkel
 talks for you with @duhow's [Profesor Oak](https://github.com/duhow/ProfesorOak)
 and lets you know how many people in a group is not registered, not validated or
 (in the future) is flagged as spammer, fly and others.
 
-After the run, you will receive simple listings that you can later process to
-kick, ban or whatever you want to do to the undesired group users!
+After the (probably long) run, you will get simple user listings that you can
+later process to kick, ban or whatever you want to do!
 
 ## Requeriments
 
@@ -41,7 +41,21 @@ Tangela will cache on disk already validated users for subsequent runs. If you
 want to ignore what is in cache and want to refresh all users, use the
 argument `--refresh-all`.
 
+## FAQ
+
+### What do I do with that ids listings?
+You can use the ids to kick users using the command `/kick` in Profesor Oak.
+Note that Profesor Oak must be group administrator.
+
+### Won't this spam Profesor Oak a lot?
+I hope not. Most people will only be asked once, if validated, and there is
+some waiting time between requests. The script even waits longer if finds out
+that Profesor Oak is not responding fast enough. However, it's still a lot of
+requests, so use with caution.
+
 ## Bugs
 
 Probably a bunch. The code was barely tested yet. I had a problem with the API
-limit so I'm still waiting to keep the tests going. Use at your own risk!
+limit so I'm still waiting to keep the tests going. This could kill your
+Telegram account, explode your computer or convert your Pokémon Go account
+to Mystic, so use at your own risk!
