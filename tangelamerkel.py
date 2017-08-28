@@ -68,11 +68,53 @@ if args.setup == True:
         json.dump(configuration, f)
 
 #
-# Connect
+# Method to get the responses from Profesor Oak
+#
+
+askingOakUserId = None
+lastOakQuestion = None
+def receiveUpdate(update):
+    global askingOakUserId
+    global users
+    global cached_users
+    if askingOakUserId == None:
+        return
+    try:
+        if update.users[0].username == "ProfesorOak_bot":
+            response = update.updates[0].message.message
+
+            # Parse Professor Oak output
+            if response.find(u"✅") >- 1:
+                cached_users[askingOakUserId]["registered"] = True
+                cached_users[askingOakUserId]["validated"] = True
+            elif response.find(u"⚠️") >- 1:
+                cached_users[askingOakUserId]["registered"] = True
+                cached_users[askingOakUserId]["validated"] = False
+            else:
+                cached_users[askingOakUserId]["registered"] = False
+            if response.find(u"Amarillo") >- 1:
+                cached_users[askingOakUserId]["team"] = "instinct"
+            elif response.find(u"Rojo") >- 1:
+                cached_users[askingOakUserId]["team"] = "valor"
+            elif response.find(u"Azul") >- 1:
+                cached_users[askingOakUserId]["team"] = "mystic"
+
+            # Add user info to global users dict
+            users[askingOakUserId] = cached_users[askingOakUserId]
+
+            # Save cache on disk
+            with open(datapath + '/users.json', 'w') as f:
+                json.dump(cached_users, f)
+    except:
+        pass
+
+#
+# Connect to Telegram
 #
 
 client = TelegramClient('session_name', configuration['api_id'], configuration['api_hash'])
 client.connect()
+client.add_update_handler(receiveUpdate)
 
 #
 # Ensure you're authorized
@@ -113,63 +155,56 @@ for user in r.users:
     sys.stdout.write("%s - %s %s " % (user.id,user.first_name or "",user.last_name or ""))
     if user.username != None:
         sys.stdout.write("(@%s)" % user.username)
-
     sys.stdout.flush()
+
+    newuser = {}
+    # Always update username, first name and last name
+    if user.username != None:
+        newuser["username"] = user.username
+    if user.first_name != None:
+        newuser["first_name"] = user.first_name
+    if user.first_name != None:
+        newuser["last_name"] = user.last_name
 
     # Search in cache. Use cached version if already registered and validated
     # and no special "refresh all" mode is used
     if args.refreshall == False and \
     str(user.id) in cached_users.keys() and \
+    "registered" in cached_users[str(user.id)].keys() and \
     cached_users[str(user.id)]["registered"] == True and \
     cached_users[str(user.id)]["validated"] == True:
-        if user.username != None:
-            cached_users[str(user.id)]["username"] = user.username
-        newuser = cached_users[str(user.id)]
+        # Cached! Update cache username, first name and last name
+        cached_users[str(user.id)]["username"] = user.username
+        cached_users[str(user.id)]["first_name"] = user.first_name
+        cached_users[str(user.id)]["last_name"] = user.last_name
         sys.stdout.write(" (Cached!)\n")
         sys.stdout.flush()
+        # Add user info to global users dict
+        users[str(user.id)] = cached_users[str(user.id)]
+        # Update cache on disk
+        with open(datapath + '/users.json', 'w') as f:
+            json.dump(cached_users, f)
     else:
-        # Ask Profesor Oak for relevant data
-        sys.stdout.write(" (Asking Profesor Oak...)")
-        sys.stdout.flush()
-        client.send_message('profesoroak_bot', 'Quién es %s' % user.id)
-        tries = 0
-        while True:
-            time.sleep(20 + tries * 2)
-
-            sys.stdout.flush()
-            oldtotal = total
-            total,messages,senders = client.get_message_history('profesoroak_bot',limit=1)
-            tries += 1
-            if total >= (oldtotal+2):
-                break
-        sys.stdout.write(" (done!)\n")
-        sys.stdout.flush()
-
-        # Parse Professor Oak output
+        # Add new user to cached users but don't write to disk now
         newuser = {}
-        if user.username != None:
-            newuser["username"] = user.username
-        if messages[0].message.find(u"✅") >- 1:
-            newuser["registered"] = True
-            newuser["validated"] = True
-        elif messages[0].message.find(u"⚠️") >- 1:
-            newuser["registered"] = True
-            newuser["validated"] = False
-        else:
-            newuser["registered"] = False
-        if messages[0].message.find(u"Amarillo") >- 1:
-            newuser["team"] = "instinct"
-        elif messages[0].message.find(u"Rojo") >- 1:
-            newuser["team"] = "valor"
-        elif messages[0].message.find(u"Azul") >- 1:
-            newuser["team"] = "mystic"
-
-    users[str(user.id)] = newuser
-    cached_users[str(user.id)] = newuser
-
-    # Save cache on disk
-    with open(datapath + '/users.json', 'w') as f:
-        json.dump(cached_users, f)
+        newuser["username"] = user.username
+        newuser["first_name"] = user.first_name
+        newuser["last_name"] = user.last_name
+        cached_users[str(user.id)] = newuser
+        # Ask Profesor Oak for relevant data
+        sys.stdout.write(" (Asking Profesor Oak...")
+        sys.stdout.flush()
+        # Limit Oak questions to one every 20 seconds
+        while lastOakQuestion != None and time.time() - lastOakQuestion < 20:
+            sys.stdout.write(".")
+            sys.stdout.flush()
+            time.sleep(1)
+        # Ok, we can continue now. Ask Oak!
+        askingOakUserId = str(user.id)
+        client.send_message('profesoroak_bot', 'Quién es %s' % user.id)
+        lastOakQuestion = time.time()
+        sys.stdout.write(")\n")
+        sys.stdout.flush()
 
 #
 # Print information
