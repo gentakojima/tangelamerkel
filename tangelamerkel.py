@@ -21,6 +21,8 @@ parser = argparse.ArgumentParser(description='Helps moderating Pokémon GO Teleg
 parser.add_argument('--force-setup', help='Force the initial setup, automatically called first time', dest='setup', action='store_true')
 parser.add_argument('--refresh-oak', help='Refresh Oak info for all users (basic info always refreshed)', dest='refreshall', action='store_true')
 parser.add_argument('--group', help='Specify the group handle (use the @name)', nargs=1, dest='group')
+parser.add_argument('--human-output', help='Print the output with usernames when available', dest='humanoutput', action='store_true')
+
 args = parser.parse_args()
 
 #
@@ -213,28 +215,60 @@ for user in r.users:
 print("Unregistered users:")
 for u in users:
     if users[u]["registered"] == False:
-        sys.stdout.write("%s " % u)
+        if args.humanoutput == True:
+            sys.stdout.write(" %s - %s %s (@%s)\n" % \
+                (u, \
+                users[u]["first_name"] if "first_name" in users[u].keys() and users[u]["first_name"] != None else '', \
+                users[u]["last_name"] if "last_name" in users[u].keys() and users[u]["last_name"] != None else '', \
+                users[u]["username"] if "username" in users[u].keys() and users[u]["username"] != None else '', \
+                ))
+        else:
+            sys.stdout.write("%s " % u)
 sys.stdout.write("\n")
 sys.stdout.flush()
 
 print("Unvalidated users:")
 for u in users:
     if users[u]["registered"] == True and users[u]["validated"] == False:
-        sys.stdout.write("%s " % u)
+        if args.humanoutput == True:
+            sys.stdout.write(" %s - %s %s (@%s)\n" % \
+                (u, \
+                users[u]["first_name"] if "first_name" in users[u].keys() and users[u]["first_name"] != None else '', \
+                users[u]["last_name"] if "last_name" in users[u].keys() and users[u]["last_name"] != None else '', \
+                users[u]["username"] if "username" in users[u].keys() and users[u]["username"] != None else '', \
+                ))
+        else:
+            sys.stdout.write("%s " % u)
 sys.stdout.write("\n")
 sys.stdout.flush()
 
 print("Validated users:")
 for u in users:
     if users[u]["registered"] == True and users[u]["validated"] == True:
-        sys.stdout.write("%s " % u)
+        if args.humanoutput == True:
+            sys.stdout.write(" %s - %s %s (@%s)\n" % \
+                (u, \
+                users[u]["first_name"] if "first_name" in users[u].keys() and users[u]["first_name"] != None else '', \
+                users[u]["last_name"] if "last_name" in users[u].keys() and users[u]["last_name"] != None else '', \
+                users[u]["username"] if "username" in users[u].keys() and users[u]["username"] != None else '', \
+                ))
+        else:
+            sys.stdout.write("%s " % u)
 sys.stdout.write("\n")
 sys.stdout.flush()
 
 print("Users without username:")
 for u in users:
-    if "username" not in users[u].keys():
-        sys.stdout.write("%s " % u)
+    if "username" not in users[u].keys() or users[u]["username"] == None:
+        if args.humanoutput == True:
+            sys.stdout.write(" %s - %s %s (@%s)\n" % \
+                (u, \
+                users[u]["first_name"] if "first_name" in users[u].keys() and users[u]["first_name"] != None else '', \
+                users[u]["last_name"] if "last_name" in users[u].keys() and users[u]["last_name"] != None else '', \
+                users[u]["username"] if "username" in users[u].keys() and users[u]["username"] != None else '', \
+                ))
+        else:
+            sys.stdout.write("%s " % u)
 sys.stdout.write("\n")
 sys.stdout.flush()
 
@@ -242,7 +276,15 @@ print("Users from team Mystic:")
 for u in users:
     if users[u]["registered"] == True and "team" in users[u].keys() and \
         users[u]["team"] == "mystic":
-        sys.stdout.write("%s " % u)
+        if args.humanoutput == True:
+            sys.stdout.write(" %s - %s %s (@%s)\n" % \
+                (u, \
+                users[u]["first_name"] if "first_name" in users[u].keys() and users[u]["first_name"] != None else '', \
+                users[u]["last_name"] if "last_name" in users[u].keys() and users[u]["last_name"] != None else '', \
+                users[u]["username"] if "username" in users[u].keys() and users[u]["username"] != None else '', \
+                ))
+        else:
+            sys.stdout.write("%s " % u)
 sys.stdout.write("\n")
 sys.stdout.flush()
 
@@ -250,7 +292,15 @@ print("Users from team Valor:")
 for u in users:
     if users[u]["registered"] == True and "team" in users[u].keys() and \
         users[u]["team"] == "valor":
-        sys.stdout.write("%s " % u)
+        if args.humanoutput == True:
+            sys.stdout.write(" %s - %s %s (@%s)\n" % \
+                (u, \
+                users[u]["first_name"] if "first_name" in users[u].keys() and users[u]["first_name"] != None else '', \
+                users[u]["last_name"] if "last_name" in users[u].keys() and users[u]["last_name"] != None else '', \
+                users[u]["username"] if "username" in users[u].keys() and users[u]["username"] != None else '', \
+                ))
+        else:
+            sys.stdout.write("%s " % u)
 sys.stdout.write("\n")
 sys.stdout.flush()
 
@@ -258,6 +308,14 @@ print("Users from team Instinc:")
 for u in users:
     if users[u]["registered"] == True and "team" in users[u].keys() and \
         users[u]["team"] == "instinct":
-        sys.stdout.write("%s " % u)
+        if args.humanoutput == True:
+            sys.stdout.write(" %s - %s %s (@%s)\n" % \
+                (u, \
+                users[u]["first_name"] if "first_name" in users[u].keys() and users[u]["first_name"] != None else '', \
+                users[u]["last_name"] if "last_name" in users[u].keys() and users[u]["last_name"] != None else '', \
+                users[u]["username"] if "username" in users[u].keys() and users[u]["username"] != None else '', \
+                ))
+        else:
+            sys.stdout.write("%s " % u)
 sys.stdout.write("\n")
 sys.stdout.flush()
