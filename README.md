@@ -31,6 +31,7 @@ optional arguments:
   --force-setup  Force the initial setup, automatically called first time
   --refresh-all  Refresh all users, even if known to be already validated
   --group GROUP  Specify the group handle (use the @name)
+  --human-output  Print the output with usernames when available
 ```
 
 First time you will be asked for an [API key, API hash](https://my.telegram.org/)
