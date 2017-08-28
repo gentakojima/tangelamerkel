@@ -103,6 +103,7 @@ def receiveUpdate(update):
 
             # Add user info to global users dict
             users[askingOakUserId] = cached_users[askingOakUserId]
+            askingOakUserId = None
 
             # Save cache on disk
             with open(datapath + '/users.json', 'w') as f:
