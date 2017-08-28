@@ -79,8 +79,8 @@ client.connect()
 #
 
 if not client.is_user_authorized():
-    client.send_code_request(phone)
-    client.sign_in(phone, input('Authorization required. Check Telegram and enter the code: '))
+    client.send_code_request(configuration['phone'])
+    client.sign_in(configuration['phone'], input('Authorization required. Check Telegram and enter the code: '))
 
 #
 # Search group
