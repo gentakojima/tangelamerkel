@@ -5,11 +5,14 @@ import sys
 import argparse
 import json
 import os
+import traceback
 
 from telethon import TelegramClient
 from telethon.tl.functions.contacts import ResolveUsernameRequest
 from telethon.tl.functions.channels import GetParticipantsRequest
 from telethon.tl.types import ChannelParticipantsSearch
+from telethon.tl.types import UpdatesTg
+from telethon.tl.types import UpdateShortMessage
 from telethon.errors.rpc_errors_400 import UsernameInvalidError
 from telethon.errors.rpc_errors_420 import FloodWaitError
 
@@ -82,18 +85,31 @@ def receiveUpdate(update):
     if askingOakUserId == None:
         return
     try:
-        if update.users[0].username == "ProfesorOak_bot":
-            response = update.updates[0].message.message
-
+        if isinstance(update,UpdateShortMessage) and update.user_id == 201760961:
+            # Short message
+            go_on = True
+            response = update.message
+        elif isinstance(update,UpdatesTg):
+            # Set of messages
+            go_on = False
+            for u in update.updates:
+                if hasattr(u,"message") and u.message.from_id == 201760961:
+                    go_on = True
+                    response = u.message.message
+                    break
+        else:
+            go_on = False
+        if go_on == True:
             # Parse Professor Oak output
             if response.find(u"✅") >- 1:
-                cached_users[askingOakUserId]["registered"] = True
-                cached_users[askingOakUserId]["validated"] = True
+                cached_users[askingOakUserId]["registered"] = "True"
+                cached_users[askingOakUserId]["validated"] = "True"
             elif response.find(u"⚠️") >- 1:
-                cached_users[askingOakUserId]["registered"] = True
-                cached_users[askingOakUserId]["validated"] = False
+                cached_users[askingOakUserId]["registered"] = "True"
+                cached_users[askingOakUserId]["validated"] = "False"
             else:
-                cached_users[askingOakUserId]["registered"] = False
+                cached_users[askingOakUserId]["registered"] = "False"
+                cached_users[askingOakUserId]["validated"] = "False"
             if response.find(u"Amarillo") >- 1:
                 cached_users[askingOakUserId]["team"] = "instinct"
             elif response.find(u"Rojo") >- 1:
@@ -109,8 +125,10 @@ def receiveUpdate(update):
             with open(datapath + '/users.json', 'w') as f:
                 json.dump(cached_users, f)
     except:
-        pass
-
+        print("\n\nUnhandled exception:")
+        print(update)
+        traceback.print_last()
+        print("\n")
 #
 # Connect to Telegram
 #
@@ -151,7 +169,6 @@ while True:
 
 users = {}
 r = client(GetParticipantsRequest(channel=result.chats[0],filter=ChannelParticipantsSearch(""),offset=0,limit=500))
-total,messages,senders = client.get_message_history('profesoroak_bot',limit=1)
 
 for user in r.users:
     # Output user basic info while processing
@@ -174,8 +191,8 @@ for user in r.users:
     if args.refreshall == False and \
     str(user.id) in cached_users.keys() and \
     "registered" in cached_users[str(user.id)].keys() and \
-    cached_users[str(user.id)]["registered"] == True and \
-    cached_users[str(user.id)]["validated"] == True:
+    cached_users[str(user.id)]["registered"] == "True" and \
+    cached_users[str(user.id)]["validated"] == "True":
         # Cached! Update cache username, first name and last name
         cached_users[str(user.id)]["username"] = user.username
         cached_users[str(user.id)]["first_name"] = user.first_name
@@ -210,12 +227,28 @@ for user in r.users:
         sys.stdout.flush()
 
 #
+# Waiting for Profesor Oak
+#
+
+sys.stdout.write("Finishing...")
+sys.stdout.flush()
+while lastOakQuestion != None and time.time() - lastOakQuestion < 20:
+    sys.stdout.write(".")
+    sys.stdout.flush()
+    time.sleep(1)
+sys.stdout.write("\n")
+sys.stdout.flush()
+
+#
 # Print information
 #
 
+sys.stdout.write("\n")
+sys.stdout.flush()
+
 print("Unregistered users:")
 for u in users:
-    if users[u]["registered"] == False:
+    if "registered" not in users[u].keys() or users[u]["registered"] == "False":
         if args.humanoutput == True:
             sys.stdout.write(" %s - %s %s (@%s)\n" % \
                 (u, \
@@ -230,7 +263,8 @@ sys.stdout.flush()
 
 print("Unvalidated users:")
 for u in users:
-    if users[u]["registered"] == True and users[u]["validated"] == False:
+    if users[u]["registered"] == "True" and \
+        ("validated" not in users[u].keys() or users[u]["validated"] == "False"):
         if args.humanoutput == True:
             sys.stdout.write(" %s - %s %s (@%s)\n" % \
                 (u, \
@@ -245,7 +279,7 @@ sys.stdout.flush()
 
 print("Validated users:")
 for u in users:
-    if users[u]["registered"] == True and users[u]["validated"] == True:
+    if users[u]["registered"] == "True" and users[u]["validated"] == "True":
         if args.humanoutput == True:
             sys.stdout.write(" %s - %s %s (@%s)\n" % \
                 (u, \
@@ -275,7 +309,7 @@ sys.stdout.flush()
 
 print("Users from team Mystic:")
 for u in users:
-    if users[u]["registered"] == True and "team" in users[u].keys() and \
+    if users[u]["registered"] == "True" and "team" in users[u].keys() and \
         users[u]["team"] == "mystic":
         if args.humanoutput == True:
             sys.stdout.write(" %s - %s %s (@%s)\n" % \
@@ -291,7 +325,7 @@ sys.stdout.flush()
 
 print("Users from team Valor:")
 for u in users:
-    if users[u]["registered"] == True and "team" in users[u].keys() and \
+    if users[u]["registered"] == "True" and "team" in users[u].keys() and \
         users[u]["team"] == "valor":
         if args.humanoutput == True:
             sys.stdout.write(" %s - %s %s (@%s)\n" % \
@@ -307,7 +341,7 @@ sys.stdout.flush()
 
 print("Users from team Instinc:")
 for u in users:
-    if users[u]["registered"] == True and "team" in users[u].keys() and \
+    if users[u]["registered"] == "True" and "team" in users[u].keys() and \
         users[u]["team"] == "instinct":
         if args.humanoutput == True:
             sys.stdout.write(" %s - %s %s (@%s)\n" % \
