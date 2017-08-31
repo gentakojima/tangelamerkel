@@ -168,63 +168,68 @@ while True:
 #
 
 users = {}
-r = client(GetParticipantsRequest(channel=result.chats[0],filter=ChannelParticipantsSearch(""),offset=0,limit=500))
-
-for user in r.users:
-    # Output user basic info while processing
-    sys.stdout.write("%s - %s %s " % (user.id,user.first_name or "",user.last_name or ""))
-    if user.username != None:
-        sys.stdout.write("(@%s)" % user.username)
-    sys.stdout.flush()
-
-    newuser = {}
-    # Always update username, first name and last name
-    if user.username != None:
-        newuser["username"] = user.username
-    if user.first_name != None:
-        newuser["first_name"] = user.first_name
-    if user.first_name != None:
-        newuser["last_name"] = user.last_name
-
-    # Search in cache. Use cached version if already registered and validated
-    # and no special "refresh all" mode is used
-    if args.refreshall == False and \
-    str(user.id) in cached_users.keys() and \
-    "registered" in cached_users[str(user.id)].keys() and \
-    cached_users[str(user.id)]["registered"] == "True" and \
-    cached_users[str(user.id)]["validated"] == "True":
-        # Cached! Update cache username, first name and last name
-        cached_users[str(user.id)]["username"] = user.username
-        cached_users[str(user.id)]["first_name"] = user.first_name
-        cached_users[str(user.id)]["last_name"] = user.last_name
-        sys.stdout.write(" (Cached!)\n")
+offset = 0
+while True:
+    r = client(GetParticipantsRequest(channel=result.chats[0],filter=ChannelParticipantsSearch(""),offset=offset,limit=50))
+    for user in r.users:
+        # Output user basic info while processing
+        sys.stdout.write("%s - %s %s " % (user.id,user.first_name or "",user.last_name or ""))
+        if user.username != None:
+            sys.stdout.write("(@%s)" % user.username)
         sys.stdout.flush()
-        # Add user info to global users dict
-        users[str(user.id)] = cached_users[str(user.id)]
-        # Update cache on disk
-        with open(datapath + '/users.json', 'w') as f:
-            json.dump(cached_users, f)
-    else:
-        # Add new user to cached users but don't write to disk now
+
         newuser = {}
-        newuser["username"] = user.username
-        newuser["first_name"] = user.first_name
-        newuser["last_name"] = user.last_name
-        cached_users[str(user.id)] = newuser
-        # Ask Profesor Oak for relevant data
-        sys.stdout.write(" (Asking Profesor Oak...")
-        sys.stdout.flush()
-        # Limit Oak questions to one every 20 seconds
-        while lastOakQuestion != None and time.time() - lastOakQuestion < 20:
-            sys.stdout.write(".")
+        # Always update username, first name and last name
+        if user.username != None:
+            newuser["username"] = user.username
+        if user.first_name != None:
+            newuser["first_name"] = user.first_name
+        if user.first_name != None:
+            newuser["last_name"] = user.last_name
+
+        # Search in cache. Use cached version if already registered and validated
+        # and no special "refresh all" mode is used
+        if args.refreshall == False and \
+        str(user.id) in cached_users.keys() and \
+        "registered" in cached_users[str(user.id)].keys() and \
+        cached_users[str(user.id)]["registered"] == "True" and \
+        cached_users[str(user.id)]["validated"] == "True":
+            # Cached! Update cache username, first name and last name
+            cached_users[str(user.id)]["username"] = user.username
+            cached_users[str(user.id)]["first_name"] = user.first_name
+            cached_users[str(user.id)]["last_name"] = user.last_name
+            sys.stdout.write(" (Cached!)\n")
             sys.stdout.flush()
-            time.sleep(1)
-        # Ok, we can continue now. Ask Oak!
-        askingOakUserId = str(user.id)
-        client.send_message('profesoroak_bot', 'Quién es %s' % user.id)
-        lastOakQuestion = time.time()
-        sys.stdout.write(")\n")
-        sys.stdout.flush()
+            # Add user info to global users dict
+            users[str(user.id)] = cached_users[str(user.id)]
+            # Update cache on disk
+            with open(datapath + '/users.json', 'w') as f:
+                json.dump(cached_users, f)
+        else:
+            # Add new user to cached users but don't write to disk now
+            newuser = {}
+            newuser["username"] = user.username
+            newuser["first_name"] = user.first_name
+            newuser["last_name"] = user.last_name
+            cached_users[str(user.id)] = newuser
+            # Ask Profesor Oak for relevant data
+            sys.stdout.write(" (Asking Profesor Oak...")
+            sys.stdout.flush()
+            # Limit Oak questions to one every 15 seconds
+            while lastOakQuestion != None and time.time() - lastOakQuestion < 15:
+                sys.stdout.write(".")
+                sys.stdout.flush()
+                time.sleep(1)
+            # Ok, we can continue now. Ask Oak!
+            askingOakUserId = str(user.id)
+            client.send_message('profesoroak_bot', 'Quién es %s' % user.id)
+            lastOakQuestion = time.time()
+            sys.stdout.write(")\n")
+            sys.stdout.flush()
+    if len(r.users) < 50:
+        break
+    else:
+        offset = offset + 50
 
 #
 # Waiting for Profesor Oak
@@ -232,7 +237,7 @@ for user in r.users:
 
 sys.stdout.write("Finishing...")
 sys.stdout.flush()
-while lastOakQuestion != None and time.time() - lastOakQuestion < 20:
+while lastOakQuestion != None and time.time() - lastOakQuestion < 15:
     sys.stdout.write(".")
     sys.stdout.flush()
     time.sleep(1)
