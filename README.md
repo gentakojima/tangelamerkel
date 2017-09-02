@@ -21,17 +21,20 @@ pip3 install -r requeriments.txt
 ## Running
 
 ```
-jorge@den:~/tangelamerkel$ ./tangelamerkel.py -h
-usage: tangelamerkel.py [-h] [--force-setup] [--refresh-all] [--group GROUP]
+$ ./tangelamerkel.py --help
+usage: tangelamerkel.py [-h] [--force-setup] [--only-telegram] [--refresh-oak]
+                        [--group GROUP] [--human-output]
 
 Helps moderating Pokémon GO Telegram groups with an iron hammer
 
 optional arguments:
-  -h, --help     show this help message and exit
-  --force-setup  Force the initial setup, automatically called first time
-  --refresh-all  Refresh all users, even if known to be already validated
-  --group GROUP  Specify the group handle (use the @name)
-  --human-output  Print the output with usernames when available
+  -h, --help       show this help message and exit
+  --force-setup    Force the initial setup, automatically called first time
+  --only-telegram  Show only Telegram info (ignore Profesor Oak)
+  --refresh-oak    Refresh Oak info for all users (Telegram info always
+                   refreshed)
+  --group GROUP    Specify the group handle (use the @name)
+  --human-output   Print the output with usernames when available
 ```
 
 First time you will be asked for an [API key, API hash](https://my.telegram.org/)
@@ -40,7 +43,10 @@ phone number. You can force the setup again with the argument `--force-setup`.
 
 Tangela will cache on disk already validated users for subsequent runs. If you
 want to ignore what is in cache and want to refresh all users, use the
-argument `--refresh-all`.
+argument `--refresh-oak`.
+
+If you are only interested in getting basic Telegram info (as of now, only what
+users have no username assigned you can add the argument `--only-telegram`)
 
 ## FAQ
 

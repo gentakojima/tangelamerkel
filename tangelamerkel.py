@@ -6,6 +6,7 @@ import argparse
 import json
 import os
 import traceback
+import re
 
 from telethon import TelegramClient
 from telethon.tl.functions.contacts import ResolveUsernameRequest
@@ -22,9 +23,12 @@ from telethon.errors.rpc_errors_420 import FloodWaitError
 
 parser = argparse.ArgumentParser(description='Helps moderating Pokémon GO Telegram groups with an iron hammer')
 parser.add_argument('--force-setup', help='Force the initial setup, automatically called first time', dest='setup', action='store_true')
-parser.add_argument('--refresh-oak', help='Refresh Oak info for all users (basic info always refreshed)', dest='refreshall', action='store_true')
+parser.add_argument('--only-telegram', help='Show only Telegram info (ignore Profesor Oak)', dest='onlytelegram', action='store_true')
+parser.add_argument('--refresh-oak', help='Refresh Oak info for all users (Telegram info always refreshed)', dest='refreshall', action='store_true')
 parser.add_argument('--group', help='Specify the group handle (use the @name)', nargs=1, dest='group')
 parser.add_argument('--human-output', help='Print the output with usernames when available', dest='humanoutput', action='store_true')
+parser.add_argument('--test-run', help='Limit run to the first 50 people for testing purposes', dest='testrun', action='store_true')
+
 
 args = parser.parse_args()
 
@@ -116,6 +120,9 @@ def receiveUpdate(update):
                 cached_users[askingOakUserId]["team"] = "valor"
             elif response.find(u"Azul") >- 1:
                 cached_users[askingOakUserId]["team"] = "mystic"
+            m = re.match("^@([a-zA-Z0-9]+),.*$", response)
+            if m != None and m.lastindex == 1:
+                cached_users[askingOakUserId]["pokemon_username"] = m.group(1)
 
             # Add user info to global users dict
             users[askingOakUserId] = cached_users[askingOakUserId]
@@ -192,6 +199,7 @@ while True:
         if args.refreshall == False and \
         str(user.id) in cached_users.keys() and \
         "registered" in cached_users[str(user.id)].keys() and \
+        "pokemon_username" in cached_users[str(user.id)].keys() and \
         cached_users[str(user.id)]["registered"] == "True" and \
         cached_users[str(user.id)]["validated"] == "True":
             # Cached! Update cache username, first name and last name
@@ -212,21 +220,30 @@ while True:
             newuser["first_name"] = user.first_name
             newuser["last_name"] = user.last_name
             cached_users[str(user.id)] = newuser
-            # Ask Profesor Oak for relevant data
-            sys.stdout.write(" (Asking Profesor Oak...")
-            sys.stdout.flush()
-            # Limit Oak questions to one every 15 seconds
-            while lastOakQuestion != None and time.time() - lastOakQuestion < 15:
-                sys.stdout.write(".")
+            if args.onlytelegram == False:
+                # Ask Profesor Oak for relevant data
+                sys.stdout.write(" (Asking Profesor Oak...")
                 sys.stdout.flush()
-                time.sleep(1)
-            # Ok, we can continue now. Ask Oak!
-            askingOakUserId = str(user.id)
-            client.send_message('profesoroak_bot', 'Quién es %s' % user.id)
-            lastOakQuestion = time.time()
-            sys.stdout.write(")\n")
-            sys.stdout.flush()
-    if len(r.users) < 50:
+                # Limit Oak questions to one every 15 seconds
+                while lastOakQuestion != None and time.time() - lastOakQuestion < 15:
+                    sys.stdout.write(".")
+                    sys.stdout.flush()
+                    time.sleep(1)
+                # Ok, we can continue now. Ask Oak!
+                askingOakUserId = str(user.id)
+                client.send_message('profesoroak_bot', 'Quién es %s' % user.id)
+                lastOakQuestion = time.time()
+                sys.stdout.write(")\n")
+                sys.stdout.flush()
+            else:
+                sys.stdout.write(" (Ignoring Profesor Oak)\n")
+                sys.stdout.flush()
+                # Add user info to global users dict
+                users[str(user.id)] = newuser
+                # Update cache on disk
+                with open(datapath + '/users.json', 'w') as f:
+                    json.dump(cached_users, f)
+    if len(r.users) < 50 or args.testrun == True:
         break
     else:
         offset = offset + 50
@@ -248,19 +265,37 @@ sys.stdout.flush()
 # Print information
 #
 
+def humanprint(u):
+    sys.stdout.write(" %s - %s %s @%s %s\n" % \
+        (u, \
+        users[u]["first_name"] if "first_name" in users[u].keys() and users[u]["first_name"] != None else '', \
+        users[u]["last_name"] if "last_name" in users[u].keys() and users[u]["last_name"] != None else '', \
+        users[u]["username"] if "username" in users[u].keys() and users[u]["username"] != None else '', \
+        users[u]["pokemon_username"] if "pokemon_username" in users[u].keys() and users[u]["pokemon_username"] != None else '', \
+        ))
+
 sys.stdout.write("\n")
 sys.stdout.flush()
+
+print("Users without username:")
+for u in users:
+    if "username" not in users[u].keys() or users[u]["username"] == None:
+        if args.humanoutput == True:
+            humanprint(u)
+        else:
+            sys.stdout.write("%s " % u)
+sys.stdout.write("\n")
+sys.stdout.flush()
+
+if args.onlytelegram ==  True:
+    # The rest of the output is Oak info
+    exit(0)
 
 print("Unregistered users:")
 for u in users:
     if "registered" not in users[u].keys() or users[u]["registered"] == "False":
         if args.humanoutput == True:
-            sys.stdout.write(" %s - %s %s (@%s)\n" % \
-                (u, \
-                users[u]["first_name"] if "first_name" in users[u].keys() and users[u]["first_name"] != None else '', \
-                users[u]["last_name"] if "last_name" in users[u].keys() and users[u]["last_name"] != None else '', \
-                users[u]["username"] if "username" in users[u].keys() and users[u]["username"] != None else '', \
-                ))
+            humanprint(u)
         else:
             sys.stdout.write("%s " % u)
 sys.stdout.write("\n")
@@ -271,12 +306,7 @@ for u in users:
     if users[u]["registered"] == "True" and \
         ("validated" not in users[u].keys() or users[u]["validated"] == "False"):
         if args.humanoutput == True:
-            sys.stdout.write(" %s - %s %s (@%s)\n" % \
-                (u, \
-                users[u]["first_name"] if "first_name" in users[u].keys() and users[u]["first_name"] != None else '', \
-                users[u]["last_name"] if "last_name" in users[u].keys() and users[u]["last_name"] != None else '', \
-                users[u]["username"] if "username" in users[u].keys() and users[u]["username"] != None else '', \
-                ))
+            humanprint(u)
         else:
             sys.stdout.write("%s " % u)
 sys.stdout.write("\n")
@@ -286,27 +316,7 @@ print("Validated users:")
 for u in users:
     if users[u]["registered"] == "True" and users[u]["validated"] == "True":
         if args.humanoutput == True:
-            sys.stdout.write(" %s - %s %s (@%s)\n" % \
-                (u, \
-                users[u]["first_name"] if "first_name" in users[u].keys() and users[u]["first_name"] != None else '', \
-                users[u]["last_name"] if "last_name" in users[u].keys() and users[u]["last_name"] != None else '', \
-                users[u]["username"] if "username" in users[u].keys() and users[u]["username"] != None else '', \
-                ))
-        else:
-            sys.stdout.write("%s " % u)
-sys.stdout.write("\n")
-sys.stdout.flush()
-
-print("Users without username:")
-for u in users:
-    if "username" not in users[u].keys() or users[u]["username"] == None:
-        if args.humanoutput == True:
-            sys.stdout.write(" %s - %s %s (@%s)\n" % \
-                (u, \
-                users[u]["first_name"] if "first_name" in users[u].keys() and users[u]["first_name"] != None else '', \
-                users[u]["last_name"] if "last_name" in users[u].keys() and users[u]["last_name"] != None else '', \
-                users[u]["username"] if "username" in users[u].keys() and users[u]["username"] != None else '', \
-                ))
+            humanprint(u)
         else:
             sys.stdout.write("%s " % u)
 sys.stdout.write("\n")
@@ -317,12 +327,7 @@ for u in users:
     if users[u]["registered"] == "True" and "team" in users[u].keys() and \
         users[u]["team"] == "mystic":
         if args.humanoutput == True:
-            sys.stdout.write(" %s - %s %s (@%s)\n" % \
-                (u, \
-                users[u]["first_name"] if "first_name" in users[u].keys() and users[u]["first_name"] != None else '', \
-                users[u]["last_name"] if "last_name" in users[u].keys() and users[u]["last_name"] != None else '', \
-                users[u]["username"] if "username" in users[u].keys() and users[u]["username"] != None else '', \
-                ))
+            humanprint(u)
         else:
             sys.stdout.write("%s " % u)
 sys.stdout.write("\n")
@@ -333,12 +338,7 @@ for u in users:
     if users[u]["registered"] == "True" and "team" in users[u].keys() and \
         users[u]["team"] == "valor":
         if args.humanoutput == True:
-            sys.stdout.write(" %s - %s %s (@%s)\n" % \
-                (u, \
-                users[u]["first_name"] if "first_name" in users[u].keys() and users[u]["first_name"] != None else '', \
-                users[u]["last_name"] if "last_name" in users[u].keys() and users[u]["last_name"] != None else '', \
-                users[u]["username"] if "username" in users[u].keys() and users[u]["username"] != None else '', \
-                ))
+            humanprint(u)
         else:
             sys.stdout.write("%s " % u)
 sys.stdout.write("\n")
@@ -349,12 +349,7 @@ for u in users:
     if users[u]["registered"] == "True" and "team" in users[u].keys() and \
         users[u]["team"] == "instinct":
         if args.humanoutput == True:
-            sys.stdout.write(" %s - %s %s (@%s)\n" % \
-                (u, \
-                users[u]["first_name"] if "first_name" in users[u].keys() and users[u]["first_name"] != None else '', \
-                users[u]["last_name"] if "last_name" in users[u].keys() and users[u]["last_name"] != None else '', \
-                users[u]["username"] if "username" in users[u].keys() and users[u]["username"] != None else '', \
-                ))
+            humanprint(u)
         else:
             sys.stdout.write("%s " % u)
 sys.stdout.write("\n")
