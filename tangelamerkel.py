@@ -28,6 +28,7 @@ parser.add_argument('--refresh-oak', help='Refresh Oak info for all users (Teleg
 parser.add_argument('--group', help='Specify the group handle (use the @name)', nargs=1, dest='group')
 parser.add_argument('--human-output', help='Print the output with usernames when available', dest='humanoutput', action='store_true')
 parser.add_argument('--test-run', help='Limit run to the first 50 people for testing purposes', dest='testrun', action='store_true')
+parser.add_argument('--limit', help='Limit run to the first N people (useful for large groups)', nargs=1, dest='limit')
 
 
 args = parser.parse_args()
@@ -176,6 +177,7 @@ while True:
 
 users = {}
 offset = 0
+count = 0
 while True:
     r = client(GetParticipantsRequest(channel=result.chats[0],filter=ChannelParticipantsSearch(""),offset=offset,limit=50))
     for user in r.users:
@@ -243,6 +245,11 @@ while True:
                 # Update cache on disk
                 with open(datapath + '/users.json', 'w') as f:
                     json.dump(cached_users, f)
+        count = count + 1
+        if args.limit != None and int(args.limit[0]) <= count:
+            break
+    if args.limit != None and int(args.limit[0]) <= count:
+        break
     if len(r.users) < 50 or args.testrun == True:
         break
     else:
