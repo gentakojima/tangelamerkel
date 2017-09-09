@@ -27,9 +27,7 @@ parser.add_argument('--only-telegram', help='Show only Telegram info (ignore Pro
 parser.add_argument('--refresh-oak', help='Refresh Oak info for all users (Telegram info always refreshed)', dest='refreshall', action='store_true')
 parser.add_argument('--group', help='Specify the group handle (use the @name)', nargs=1, dest='group')
 parser.add_argument('--human-output', help='Print the output with usernames when available', dest='humanoutput', action='store_true')
-parser.add_argument('--test-run', help='Limit run to the first 50 people for testing purposes', dest='testrun', action='store_true')
-parser.add_argument('--limit', help='Limit run to the first N people (useful for large groups)', nargs=1, dest='limit')
-
+parser.add_argument('--limit', help='Limit run to the first N people (for large groups or testing purposes)', nargs=1, dest='limit')
 
 args = parser.parse_args()
 
@@ -248,9 +246,7 @@ while True:
         count = count + 1
         if args.limit != None and int(args.limit[0]) <= count:
             break
-    if args.limit != None and int(args.limit[0]) <= count:
-        break
-    if len(r.users) < 50 or args.testrun == True:
+    if (args.limit != None and int(args.limit[0]) <= count) or len(r.users) < 50:
         break
     else:
         offset = offset + 50

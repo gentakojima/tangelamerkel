@@ -35,6 +35,8 @@ optional arguments:
                    refreshed)
   --group GROUP    Specify the group handle (use the @name)
   --human-output   Print the output with usernames when available
+  --limit LIMIT    Limit run to the first N people (for large groups or
+                 testing purposes)
 ```
 
 First time you will be asked for an [API key, API hash](https://my.telegram.org/)
