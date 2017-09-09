@@ -96,7 +96,8 @@ def receiveUpdate(update):
             # Set of messages
             go_on = False
             for u in update.updates:
-                if hasattr(u,"message") and u.message.from_id == 201760961:
+                if hasattr(u,"message") and u.message.from_id == 201760961 and \
+                    not hasattr(u.message.to_id,"channel_id"):
                     go_on = True
                     response = u.message.message
                     break
