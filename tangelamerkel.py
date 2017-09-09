@@ -270,11 +270,11 @@ sys.stdout.flush()
 #
 
 def humanprint(u):
-    sys.stdout.write(" %s - %s %s @%s %s\n" % \
+    sys.stdout.write(" %s - %s %s %s %s\n" % \
         (u, \
         users[u]["first_name"] if "first_name" in users[u].keys() and users[u]["first_name"] != None else '', \
         users[u]["last_name"] if "last_name" in users[u].keys() and users[u]["last_name"] != None else '', \
-        users[u]["username"] if "username" in users[u].keys() and users[u]["username"] != None else '', \
+        "@" + users[u]["username"] if "username" in users[u].keys() and users[u]["username"] != None else '', \
         users[u]["pokemon_username"] if "pokemon_username" in users[u].keys() and users[u]["pokemon_username"] != None else '', \
         ))
 
