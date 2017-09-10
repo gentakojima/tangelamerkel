@@ -141,7 +141,9 @@ def receiveUpdate(update):
 #
 
 client = TelegramClient('session_name', configuration['api_id'], configuration['api_hash'])
-client.connect()
+if client.connect() != True:
+    print("Can't connect to Telegram. Maybe you abused API limit retries? Also check your connection!")
+    exit(1)
 client.add_update_handler(receiveUpdate)
 
 #
@@ -161,8 +163,12 @@ while True:
         result = client(ResolveUsernameRequest(str(args.group[0])))
     except UsernameInvalidError:
         pass
-    except FloodWaitError:
-        print("API returned a FloodWaitError. Looks like you reached the API limit! Exiting...")
+    except FloodWaitError as err:
+        err = str(err)
+        m = re.search('wait of (\d+) seconds',err)
+        m, s = divmod(int(m.group(1)), 60)
+        h, m = divmod(m, 60)
+        print("Looks like you reached the API limit! Must wait %ih%im before trying again" % (h, m))
         exit(1)
     if 'result' in locals():
         break
@@ -348,7 +354,7 @@ for u in users:
 sys.stdout.write("\n")
 sys.stdout.flush()
 
-print("Users from team Instinc:")
+print("Users from team Instinct:")
 for u in users:
     if users[u]["registered"] == "True" and "team" in users[u].keys() and \
         users[u]["team"] == "instinct":
