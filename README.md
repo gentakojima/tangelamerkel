@@ -54,7 +54,7 @@ phone number. If anything goes wrong, you can force the setup again with the
 argument `--force-setup`.
 
 To ignore the disk cache and refresh all users, use the argument `--refresh-oak`.
-Sorry, Oak. Make sure to [donate a pair of euros to duhow](https://donate.profoak.me).
+Sorry, Oak. Make sure to [donate a pair of euros to duhow](http://donar.profoak.me).
 
 If you are only interested in getting what users have no username assigned
 you can add the argument `--only-telegram`. It won't ask Oak for any information,
