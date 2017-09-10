@@ -5,14 +5,23 @@ A simple Python script that helps moderating Pokémon Go groups in Telegram.
 Using the Telethon library for communicating with Telegram, Tangela Merkel
 talks for you with @duhow's [Profesor Oak](https://github.com/duhow/ProfesorOak)
 and lets you know how many people in a group is not registered, not validated or
-(in the future) is flagged as spammer, fly and others.
+(probably in the near future) is flagged as spam, fly or others.
 
-After the (probably long) run, you will get simple user listings that you can
-later process to kick, ban or whatever you want to do!
+Please notice that questions to Profesor Oak are intentionally limited to one
+every 15 seconds to avoid flooding the bot. A channel consisting of 200 users
+will last about 50 minutes on the first run.
+
+Tangela caches users information on disk and registered and validated users
+are only requested once. Assuming 80% of registered users in a channel consisting
+of 200 users, the script would only last about 12 minutes on the second run.
+
+After every run, you will get simple numeric ID listings that you can
+later process to kick, ban or whatever you want to do! If you want to get more
+information alongside IDs, make sure to use the `--human-output` argument.
 
 ## Requeriments
 
-Only runs in Python 3, no Python 2.7 support. To install dependencies just run:
+Only runs in Python 3 (no Python 2.7 support!). To install dependencies just run:
 
 ```
 pip3 install -r requeriments.txt
@@ -39,32 +48,38 @@ optional arguments:
                  testing purposes)
 ```
 
-First time you will be asked for an [API key, API hash](https://my.telegram.org/)
+On first run you will be asked for an [API key, API hash](https://my.telegram.org/)
 and your phone number. This script will connect with the account linked to that
-phone number. You can force the setup again with the argument `--force-setup`.
+phone number. If anything goes wrong, you can force the setup again with the 
+argument `--force-setup`.
 
-Tangela will cache on disk already validated users for subsequent runs. If you
-want to ignore what is in cache and want to refresh all users, use the
-argument `--refresh-oak`.
+To ignore the disk cache and refresh all users, use the argument `--refresh-oak`.
 
-If you are only interested in getting basic Telegram info (as of now, only what
-users have no username assigned you can add the argument `--only-telegram`)
+If you are only interested in getting what users have no username assigned
+you can add the argument `--only-telegram`. It won't ask Oak for any information,
+so the script should last only some seconds.
 
 ## FAQ
 
-### What do I do with that ids listings?
-You can use the ids to kick users using the command `/kick` in Profesor Oak.
-Note that Profesor Oak must be group administrator.
+### What do I do with that numeric ID listings?
+You can use the ids to kick users using the command `/kick` in Profesor Oak. Note
+that Profesor Oak must be group administrator. If you want a more human-friendly
+output with more information, use the argument `--human-output`.
 
 ### Won't this spam Profesor Oak a lot?
-I hope not. Most people will only be asked once, if validated, and there is
-some waiting time between requests. The script even waits longer if finds out
-that Profesor Oak is not responding fast enough. However, it's still a lot of
-requests, so use with caution.
+Since most people will only be asked once, if validated, and there is some waiting
+between requests... I hope not. Even so, use with caution.
+
+### I'm getting told that I reached the API limit! Why?
+Sincerely, don't know. The script tries to be gentle with the API, but seems like
+large channels (>250 users) will sometimes trigger the API limit. In that case,
+you might want to use the option `--limit N` to limit the script to the first 250
+users, act accordingly and then wait some hours to repeat with a slightly higher
+number.
 
 ## Bugs
 
 Probably a bunch. The code was barely tested yet. I had a problem with the API
-limit so I'm still waiting to keep the tests going. This could kill your
-Telegram account, explode your computer or even turn your Pokémon Go account
-into Mystic, so use at your own risk!
+limit so I'm still waiting to keep the tests going. This could kill your Telegram
+account, ba-da-boom your computer, hold your foldy flops, or even turn your Pokémon
+Go account into Mystic, so use at your own risk!
