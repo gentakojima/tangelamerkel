@@ -11,11 +11,14 @@ import re
 from telethon import TelegramClient
 from telethon.tl.functions.contacts import ResolveUsernameRequest
 from telethon.tl.functions.channels import GetParticipantsRequest
+from telethon.tl.functions.messages import GetDialogsRequest
 from telethon.tl.types import ChannelParticipantsSearch
 from telethon.tl.types import Updates
 from telethon.tl.types import UpdateShortMessage
+from telethon.tl.types import InputPeerEmpty
 from telethon.errors.rpc_errors_400 import UsernameInvalidError
 from telethon.errors.rpc_errors_420 import FloodWaitError
+
 
 #
 # Parse command line args
@@ -25,7 +28,7 @@ parser = argparse.ArgumentParser(description='Helps moderating Pokémon GO Teleg
 parser.add_argument('--force-setup', help='Force the initial setup, automatically called first time', dest='setup', action='store_true')
 parser.add_argument('--only-telegram', help='Show only Telegram info (ignore Profesor Oak)', dest='onlytelegram', action='store_true')
 parser.add_argument('--refresh-oak', help='Refresh Oak info for all users (Telegram info always refreshed)', dest='refreshall', action='store_true')
-parser.add_argument('--group', help='Specify the group handle (use the @name)', nargs=1, dest='group')
+parser.add_argument('--group', help='Specify the group username or numeric ID', nargs=1, dest='group')
 parser.add_argument('--human-output', help='Print the output with usernames when available', dest='humanoutput', action='store_true')
 parser.add_argument('--limit', help='Limit run to the first N people (for large groups or testing purposes)', nargs=1, dest='limit')
 
@@ -60,8 +63,10 @@ except FileNotFoundError:
 #
 
 if args.group == None:
-    group = input('Enter the group name: ')
+    group = input('Enter the group username or numeric ID: ')
     args.group = [group]
+    print("[TIP!] Next time, you can invoke «%s --group %s» directly." % (sys.argv[0],group))
+    print("       See «%s --help» for more options." % (sys.argv[0]))
 
 #
 # Initial setup
@@ -155,26 +160,38 @@ if not client.is_user_authorized():
     client.sign_in(configuration['phone'], input('Authorization required. Check Telegram and enter the code: '))
 
 #
-# Search group
+# Search chat
 #
 
-while True:
-    try:
-        result = client(ResolveUsernameRequest(str(args.group[0])))
-    except UsernameInvalidError:
-        pass
-    except FloodWaitError as err:
-        err = str(err)
-        m = re.search('wait of (\d+) seconds',err)
-        m, s = divmod(int(m.group(1)), 60)
-        h, m = divmod(m, 60)
-        print("Looks like you reached the API limit! Must wait %ih%im before trying again" % (h, m))
+chats = []
+chosen_chat = None
+
+result = client(GetDialogsRequest(
+                 offset_date=None,
+                 offset_id=0,
+                 offset_peer=InputPeerEmpty(),
+                 limit=30
+             ))
+
+chats.extend(result.chats)
+if len(result.chats)>0:
+    for chat in result.chats:
+        try:
+            if chat.username.lower() == args.group[0].lower():
+                chosen_chat = chat
+                break
+        except AttributeError:
+            pass
+        if str(chat.id) == str(args.group[0]) or \
+           "100"+str(chat.id) == str(args.group[0]) or \
+           "-100"+str(chat.id) == str(args.group[0]):
+            chosen_chat = chat
+            break
+    else:
+        print("Unable to find specified chat!")
         exit(1)
-    if 'result' in locals():
-        break
-    print("Group name seems to be not valid. Please enter the @name (no spaces, no special chars...)")
-    group = input('Enter the group name: ')
-    args.group = [group]
+else:
+    print("Unable to get chat list!")
 
 #
 # Search participants in group
@@ -184,7 +201,7 @@ users = {}
 offset = 0
 count = 0
 while True:
-    r = client(GetParticipantsRequest(channel=result.chats[0],filter=ChannelParticipantsSearch(""),offset=offset,limit=50))
+    r = client(GetParticipantsRequest(channel=chosen_chat,filter=ChannelParticipantsSearch(""),offset=offset,limit=50))
     for user in r.users:
         # Output user basic info while processing
         sys.stdout.write("%s - %s %s " % (user.id,user.first_name or "",user.last_name or ""))

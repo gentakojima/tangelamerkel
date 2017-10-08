@@ -42,7 +42,7 @@ optional arguments:
   --only-telegram  Show only Telegram info (ignore Profesor Oak)
   --refresh-oak    Refresh Oak info for all users (Telegram info always
                    refreshed)
-  --group GROUP    Specify the group handle (use the @name)
+  --group GROUP    Specify the group username or numeric ID
   --human-output   Print the output with usernames when available
   --limit LIMIT    Limit run to the first N people (for large groups or
                  testing purposes)
