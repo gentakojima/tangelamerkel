@@ -12,7 +12,7 @@ from telethon import TelegramClient
 from telethon.tl.functions.contacts import ResolveUsernameRequest
 from telethon.tl.functions.channels import GetParticipantsRequest
 from telethon.tl.types import ChannelParticipantsSearch
-from telethon.tl.types import UpdatesTg
+from telethon.tl.types import Updates
 from telethon.tl.types import UpdateShortMessage
 from telethon.errors.rpc_errors_400 import UsernameInvalidError
 from telethon.errors.rpc_errors_420 import FloodWaitError
@@ -92,7 +92,7 @@ def receiveUpdate(update):
             # Short message
             go_on = True
             response = update.message
-        elif isinstance(update,UpdatesTg):
+        elif isinstance(update,Updates):
             # Set of messages
             go_on = False
             for u in update.updates:
