@@ -12,13 +12,7 @@ from telethon import TelegramClient
 from telethon.tl.functions.contacts import ResolveUsernameRequest
 from telethon.tl.functions.channels import GetParticipantsRequest
 from telethon.tl.functions.messages import GetDialogsRequest
-from telethon.tl.types import ChannelParticipantsSearch
-from telethon.tl.types import Updates
-from telethon.tl.types import UpdateShortMessage
-from telethon.tl.types import InputPeerEmpty
-from telethon.errors.rpc_errors_400 import UsernameInvalidError
-from telethon.errors.rpc_errors_420 import FloodWaitError
-
+from telethon.tl.types import ChannelParticipantsSearch, Updates, UpdateShortMessage, UpdateNewMessage, InputPeerEmpty
 
 #
 # Parse command line args
@@ -97,6 +91,10 @@ def receiveUpdate(update):
             # Short message
             go_on = True
             response = update.message
+        elif isinstance(update,UpdateNewMessage) and update.message.from_id == 201760961:
+            # New message
+            go_on = True
+            response = update.message.message
         elif isinstance(update,Updates):
             # Set of messages
             go_on = False
@@ -136,16 +134,15 @@ def receiveUpdate(update):
             # Save cache on disk
             with open(datapath + '/users.json', 'w') as f:
                 json.dump(cached_users, f)
-    except:
-        print("\n\nUnhandled exception:")
+    except Exception as e:
+        print("\n\nUnhandled exception: %s" % e)
         print(update)
-        traceback.print_last()
         print("\n")
 #
 # Connect to Telegram
 #
 
-client = TelegramClient('session_name', configuration['api_id'], configuration['api_hash'])
+client = TelegramClient('session_name', configuration['api_id'], configuration['api_hash'], update_workers=2)
 if client.connect() != True:
     print("Can't connect to Telegram. Maybe you abused API limit retries? Also check your connection!")
     exit(1)
@@ -192,6 +189,7 @@ if len(result.chats)>0:
         exit(1)
 else:
     print("Unable to get chat list!")
+    exit(1)
 
 #
 # Search participants in group
@@ -201,7 +199,7 @@ users = {}
 offset = 0
 count = 0
 while True:
-    r = client(GetParticipantsRequest(channel=chosen_chat,filter=ChannelParticipantsSearch(""),offset=offset,limit=50))
+    r = client(GetParticipantsRequest(channel=chosen_chat,filter=ChannelParticipantsSearch(""),offset=offset,limit=50,hash=0))
     for user in r.users:
         # Output user basic info while processing
         sys.stdout.write("%s - %s %s " % (user.id,user.first_name or "",user.last_name or ""))
@@ -249,7 +247,7 @@ while True:
                 sys.stdout.write(" (Asking Profesor Oak...")
                 sys.stdout.flush()
                 # Limit Oak questions to one every 15 seconds
-                while lastOakQuestion != None and time.time() - lastOakQuestion < 15:
+                while lastOakQuestion != None and time.time() - lastOakQuestion < 20:
                     sys.stdout.write(".")
                     sys.stdout.flush()
                     time.sleep(1)
