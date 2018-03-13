@@ -123,7 +123,7 @@ def receiveUpdate(update):
                 cached_users[askingOakUserId]["team"] = "valor"
             elif response.find(u"Azul") >- 1:
                 cached_users[askingOakUserId]["team"] = "mystic"
-            m = re.match("^@([a-zA-Z0-9]+),.*$", response)
+            m = re.match("^([a-zA-Z0-9]+),.*$", response)
             if m != None and m.lastindex == 1:
                 cached_users[askingOakUserId]["pokemon_username"] = m.group(1)
 
